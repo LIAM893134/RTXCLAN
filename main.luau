@@ -43,8 +43,13 @@ local Window = Library:AddWindow(
 local RebirthTab = Window:AddTab("REBIRTHS")
 RebirthTab:Show()
 
-RebirthTab:AddLabel("Training: 2 Mythic Boss + 4 Swift + 2 Rainbow Golem")
-RebirthTab:AddLabel("Rebirth: 4 Tribal Overlord")
+RebirthTab:AddLabel(
+    "Training: 2 Mythic Boss + 4 Swift + 2 Rainbow Boss Pet"
+)
+
+RebirthTab:AddLabel(
+    "Rebirth: 4 Tribal Overlord"
+)
 
 local fastFarm = false
 local fastRebirth = false
@@ -62,11 +67,18 @@ end
 local function getPetsByName(name)
     local pets = {}
 
-    for _, folder in ipairs(petsFolder:GetChildren()) do
+    for _, folder in ipairs(
+        petsFolder:GetChildren()
+    ) do
         if folder:IsA("Folder") then
-            for _, pet in ipairs(folder:GetChildren()) do
+            for _, pet in ipairs(
+                folder:GetChildren()
+            ) do
                 if pet.Name:lower() == name:lower() then
-                    table.insert(pets, pet)
+                    table.insert(
+                        pets,
+                        pet
+                    )
                 end
             end
         end
@@ -76,9 +88,13 @@ local function getPetsByName(name)
 end
 
 local function unequipAllPets()
-    for _, folder in ipairs(petsFolder:GetChildren()) do
+    for _, folder in ipairs(
+        petsFolder:GetChildren()
+    ) do
         if folder:IsA("Folder") then
-            for _, pet in ipairs(folder:GetChildren()) do
+            for _, pet in ipairs(
+                folder:GetChildren()
+            ) do
                 pcall(function()
                     EquipPetEvent:FireServer(
                         "unequipPet",
@@ -109,6 +125,7 @@ local function equipAmount(name, amount)
         end)
 
         equipped += 1
+
         task.wait(0.08)
     end
 
@@ -132,7 +149,7 @@ local function equipTrainingPets()
 
     local rainbow =
         equipAmount(
-            "Rainbow Golem",
+            "Rainbow Boss Pet",
             2
         )
 
@@ -140,7 +157,7 @@ local function equipTrainingPets()
         "[TRAINING]",
         mythic .. "/2 Mythic Boss Pet",
         swift .. "/4 Swift Samurai",
-        rainbow .. "/2 Rainbow Golem"
+        rainbow .. "/2 Rainbow Boss Pet"
     )
 end
 
@@ -162,7 +179,9 @@ end
 local function trainSlow()
     for _ = 1, 5 do
         pcall(function()
-            MuscleEvent:FireServer("rep")
+            MuscleEvent:FireServer(
+                "rep"
+            )
         end)
     end
 end
