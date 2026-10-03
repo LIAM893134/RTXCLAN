@@ -1,96 +1,86 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Player = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 local rEvents = ReplicatedStorage:WaitForChild("rEvents")
-local muscleEvent = Player:WaitForChild("muscleEvent")
-local petsFolder = Player:WaitForChild("petsFolder")
 
-local leaderstats = Player:WaitForChild("leaderstats")
-local Rebirths = leaderstats:WaitForChild("Rebirths")
-local Strength = leaderstats:WaitForChild("Strength")
+local MuscleEvent =
+    LocalPlayer:FindFirstChild("muscleEvent")
+    or ReplicatedStorage:WaitForChild("muscleEvent")
 
-local equipPetEvent = rEvents:WaitForChild("equipPetEvent")
-local rebirthRemote = rEvents:WaitForChild("rebirthRemote")
+local EquipPetEvent =
+    rEvents:WaitForChild("equipPetEvent")
+
+local RebirthRemote =
+    rEvents:WaitForChild("rebirthRemote")
+
+local leaderstats =
+    LocalPlayer:WaitForChild("leaderstats")
+
+local Strength =
+    leaderstats:WaitForChild("Strength")
+
+local Rebirths =
+    leaderstats:WaitForChild("Rebirths")
+
+local petsFolder =
+    LocalPlayer:WaitForChild("petsFolder")
 
 local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/silencedevs/SilenceScripts/refs/heads/main/librarys/eleriumv2.luau"
+    "https://raw.githubusercontent.com/memejames/elerium-v2-ui-library/main/Library",
+    true
 ))()
 
 local Window = Library:AddWindow(
-    "Fast Rebirth | " .. Player.DisplayName,
+    "Fast Farm | " .. LocalPlayer.DisplayName,
     {
-        main_color = Color3.fromRGB(138, 0, 0),
-        min_size = Vector2.new(500, 350),
-        can_resize = false
+        main_color = Color3.fromRGB(0, 170, 255),
+        min_size = Vector2.new(460, 360),
+        can_resize = true
     }
 )
 
-local RebirthTab = Window:AddTab("Rebirths")
-
+local RebirthTab = Window:AddTab("REBIRTHS")
 RebirthTab:Show()
 
-local running = false
-local workerActive = false
-local currentPhase = "Inactive"
+RebirthTab:AddLabel("Training: 2 Mythic Boss + 4 Swift + 2 Rainbow Golem")
+RebirthTab:AddLabel("Rebirth: 4 Tribal Overlord")
 
-local Status =
-    RebirthTab:AddLabel(
-        "Status: Inactive"
-    )
+local fastFarm = false
+local fastRebirth = false
 
-local StrengthLabel =
-    RebirthTab:AddLabel(
-        "Strength: 0 / 0"
-    )
+local farmGeneration = 0
+local rebirthGeneration = 0
 
-local RebirthLabel =
-    RebirthTab:AddLabel(
-        "Rebirths: " .. tostring(Rebirths.Value)
-    )
-
-local PetLabel =
-    RebirthTab:AddLabel(
-        "Pets: None"
-    )
+local FastFarmToggle
+local FastRebirthToggle
 
 local function getRequiredStrength()
     return 5000 + Rebirths.Value * 2550
 end
 
 local function getPetsByName(name)
-    local result = {}
+    local pets = {}
 
-    for _, folder in ipairs(
-        petsFolder:GetChildren()
-    ) do
+    for _, folder in ipairs(petsFolder:GetChildren()) do
         if folder:IsA("Folder") then
-            for _, pet in ipairs(
-                folder:GetChildren()
-            ) do
-                if pet.Name == name then
-                    table.insert(
-                        result,
-                        pet
-                    )
+            for _, pet in ipairs(folder:GetChildren()) do
+                if pet.Name:lower() == name:lower() then
+                    table.insert(pets, pet)
                 end
             end
         end
     end
 
-    return result
+    return pets
 end
 
 local function unequipAllPets()
-    for _, folder in ipairs(
-        petsFolder:GetChildren()
-    ) do
+    for _, folder in ipairs(petsFolder:GetChildren()) do
         if folder:IsA("Folder") then
-            for _, pet in ipairs(
-                folder:GetChildren()
-            ) do
+            for _, pet in ipairs(folder:GetChildren()) do
                 pcall(function()
-                    equipPetEvent:FireServer(
+                    EquipPetEvent:FireServer(
                         "unequipPet",
                         pet
                     )
@@ -99,16 +89,11 @@ local function unequipAllPets()
         end
     end
 
-    task.wait(0.12)
+    task.wait(0.2)
 end
 
-local function equipAmount(
-    name,
-    amount
-)
-    local pets =
-        getPetsByName(name)
-
+local function equipAmount(name, amount)
+    local pets = getPetsByName(name)
     local equipped = 0
 
     for _, pet in ipairs(pets) do
@@ -116,27 +101,28 @@ local function equipAmount(
             break
         end
 
-        equipPetEvent:FireServer(
-            "equipPet",
-            pet
-        )
+        pcall(function()
+            EquipPetEvent:FireServer(
+                "equipPet",
+                pet
+            )
+        end)
 
         equipped += 1
-
-        task.wait(0.04)
+        task.wait(0.08)
     end
 
     return equipped
 end
 
 local function equipTrainingPets()
-    currentPhase =
-        "Equipping Training Pets"
-
-    Status.Text =
-        "Status: Equipping Training Pets"
-
     unequipAllPets()
+
+    local mythic =
+        equipAmount(
+            "Mythic Boss Pet",
+            2
+        )
 
     local swift =
         equipAmount(
@@ -144,33 +130,21 @@ local function equipTrainingPets()
             4
         )
 
-    local rare =
+    local rainbow =
         equipAmount(
-            "Rare Boss Pet",
-            4
+            "Rainbow Golem",
+            2
         )
 
-    PetLabel.Text =
-        "Pets: "
-        .. tostring(swift)
-        .. "/4 Swift Samurai | "
-        .. tostring(rare)
-        .. "/4 Rare Boss Pet"
-
-    currentPhase =
-        "Training"
-
-    Status.Text =
-        "Status: Training"
+    print(
+        "[TRAINING]",
+        mythic .. "/2 Mythic Boss Pet",
+        swift .. "/4 Swift Samurai",
+        rainbow .. "/2 Rainbow Golem"
+    )
 end
 
 local function equipRebirthPets()
-    currentPhase =
-        "Equipping Rebirth Pets"
-
-    Status.Text =
-        "Status: Equipping Tribal Overlords"
-
     unequipAllPets()
 
     local tribal =
@@ -179,144 +153,147 @@ local function equipRebirthPets()
             4
         )
 
-    PetLabel.Text =
-        "Pets: "
-        .. tostring(tribal)
-        .. "/4 Tribal Overlord"
-
-    currentPhase =
-        "Rebirth"
+    print(
+        "[REBIRTH]",
+        tribal .. "/4 Tribal Overlord"
+    )
 end
 
-local function trainUntilReady()
-    local target =
-        getRequiredStrength()
+local function trainSlow()
+    for _ = 1, 5 do
+        pcall(function()
+            MuscleEvent:FireServer("rep")
+        end)
+    end
+end
 
-    while running
-        and Strength.Value < target do
+local function startFastFarm()
+    farmGeneration += 1
 
-        for _ = 1, 12 do
-            if not running then
-                break
-            end
+    local generation =
+        farmGeneration
 
-            muscleEvent:FireServer(
-                "rep"
-            )
+    task.spawn(function()
+        equipTrainingPets()
+
+        while fastFarm
+            and generation == farmGeneration do
+
+            trainSlow()
+
+            task.wait(0.08)
         end
-
-        task.wait(0.02)
-    end
+    end)
 end
 
-local function performRebirth()
-    if not running then
-        return
-    end
-
-    local target =
-        getRequiredStrength()
-
-    if Strength.Value < target then
-        return
+local function doRebirth()
+    if Strength.Value < getRequiredStrength() then
+        return false
     end
 
     equipRebirthPets()
 
-    task.wait(0.25)
+    task.wait(0.4)
 
     local oldRebirths =
         Rebirths.Value
 
-    Status.Text =
-        "Status: Rebirthing"
+    local timeout =
+        tick() + 8
 
-    repeat
+    while fastRebirth
+        and Rebirths.Value <= oldRebirths
+        and tick() < timeout do
+
         pcall(function()
-            rebirthRemote:InvokeServer(
+            RebirthRemote:InvokeServer(
                 "rebirthRequest"
             )
         end)
 
-        task.wait(0.05)
-
-    until Rebirths.Value > oldRebirths
-        or not running
-end
-
-local function startWorker()
-    if workerActive then
-        return
+        task.wait(0.1)
     end
 
-    workerActive = true
+    return Rebirths.Value > oldRebirths
+end
+
+local function startFastRebirth()
+    rebirthGeneration += 1
+
+    local generation =
+        rebirthGeneration
 
     task.spawn(function()
-        while running do
-            equipTrainingPets()
+        equipTrainingPets()
 
-            trainUntilReady()
+        while fastRebirth
+            and generation == rebirthGeneration do
 
-            if running then
-                performRebirth()
+            if Strength.Value < getRequiredStrength() then
+                trainSlow()
+
+                task.wait(0.08)
+            else
+                doRebirth()
+
+                if not fastRebirth
+                    or generation ~= rebirthGeneration then
+
+                    break
+                end
+
+                task.wait(0.3)
+
+                equipTrainingPets()
             end
-
-            task.wait(0.15)
         end
-
-        currentPhase =
-            "Inactive"
-
-        Status.Text =
-            "Status: Inactive"
-
-        workerActive = false
     end)
 end
 
-RebirthTab:AddSwitch(
-    "Fast Rebirth",
-    function(state)
-        running = state
+FastFarmToggle =
+    RebirthTab:AddSwitch(
+        "Fast Farm",
+        function(state)
+            fastFarm = state
+            farmGeneration += 1
 
-        if state then
-            Status.Text =
-                "Status: Starting"
+            if state then
+                if fastRebirth then
+                    fastRebirth = false
+                    rebirthGeneration += 1
 
-            startWorker()
-        else
-            Status.Text =
-                "Status: Stopped"
+                    if FastRebirthToggle then
+                        FastRebirthToggle:Set(false)
+                    end
+                end
 
-            currentPhase =
-                "Inactive"
+                startFastFarm()
+            end
         end
-    end
-):Set(false)
+    )
 
-task.spawn(function()
-    while task.wait(0.1) do
-        local target =
-            getRequiredStrength()
+FastFarmToggle:Set(false)
 
-        StrengthLabel.Text =
-            "Strength: "
-            .. tostring(
-                math.floor(
-                    Strength.Value
-                )
-            )
-            .. " / "
-            .. tostring(
-                math.floor(
-                    target
-                )
-            )
+FastRebirthToggle =
+    RebirthTab:AddSwitch(
+        "Fast Rebirth",
+        function(state)
+            fastRebirth = state
+            rebirthGeneration += 1
 
-        RebirthLabel.Text =
-            "Rebirths: "
-            .. tostring(
-                Rebirths.Value
-            )
-    end
-end)
+            if state then
+                if fastFarm then
+                    fastFarm = false
+                    farmGeneration += 1
+
+                    if FastFarmToggle then
+                        FastFarmToggle:Set(false)
+                    end
+                end
+
+                startFastRebirth()
+            end
+        end
+    )
+
+FastRebirthToggle:Set(false)
